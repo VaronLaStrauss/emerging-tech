@@ -1,0 +1,66 @@
+services:
+  postgres:
+    image: postgres:latest
+    volumes:
+      - pgdata:/var/lib/postgresql
+    ports:
+      - 5432:5432
+    secrets:
+      - db-password
+    environment:
+      - POSTGRES_DB=emerging-tech
+      - POSTGRES_USER=dev
+      - POSTGRES_PASSWORD=password
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -h localhost -U dev -d emerging-tech"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  surrealdb:
+    image: surrealdb/surrealdb:latest
+    entrypoint:
+      - /surreal
+      - start
+      - --user
+      - user
+      - --pass
+      - password
+    ports:
+      - 8000:8000
+    networks:
+      - app-network
+
+  n8n:
+    image: docker.n8n.io/n8nio/n8n
+    environment:
+      - DB_TYPE=postgresdb
+      - DB_POSTGRESDB_HOST=postgres
+      - DB_POSTGRESDB_PORT=5432
+      - DB_POSTGRESDB_DATABASE=emerging-tech
+      - DB_POSTGRESDB_USER=dev
+      - DB_POSTGRESDB_PASSWORD=password
+    ports:
+      - 5678:5678
+    links:
+      - postgres
+    volumes:
+      - n8n_storage:/home/node/.n8n
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - app-network
+
+secrets:
+  db-password:
+    file: ./keys/db-password.txt
+
+volumes:
+  pgdata:
+  n8n_storage:
+
+networks:
+  app-network:
