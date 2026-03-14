@@ -54,10 +54,6 @@ services:
     networks:
       - app-network
 
-secrets:
-  db-password:
-    file: ./keys/db-password.txt
-
 volumes:
   pgdata:
   n8n_storage:
